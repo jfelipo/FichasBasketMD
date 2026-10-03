@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversor de estadísticas de baloncesto</title>
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 2rem 1rem;
+            box-sizing: border-box;
+        }
+        .container {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+        }
+        h1 { font-size: 1.5rem; text-align: center; margin: 0 0 0.5rem 0; }
+        .subtitle { text-align: center; color: #6c757d; margin-bottom: 2rem; }
+        label { display: block; font-weight: 500; margin-bottom: 0.5rem; }
+        input[type="url"], input[type="text"] { width: 100%; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 8px; box-sizing: border-box; }
+        .example { font-size: 0.8rem; color: #6c757d; background-color: #f8f9fa; padding: 0.5rem; border-radius: 4px; margin-top: 0.5rem; }
+        .league-selector { display: flex; gap: 0.5rem; padding: 0.35rem; margin-bottom: 1.5rem; background: #f1f3f8; border-radius: 10px; }
+        .league-option { flex: 1; padding: 0.7rem 0.5rem; background: transparent; color: #525866; }
+        .league-option.active { background: #6a6cff; color: #fff; box-shadow: 0 2px 6px rgba(35, 39, 80, 0.16); }
+        .buttons { display: flex; gap: 1rem; margin-top: 1.5rem; }
+        button { flex-grow: 1; padding: 0.8rem 1rem; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s ease; }
+        button:disabled { opacity: 0.65; cursor: wait; }
+        .btn-preview { background-color: #6a6cff; color: white; }
+        .btn-download { background-color: #28a745; color: white; }
+        .btn-copy { background-color: #344054; color: white; }
+        .message { margin-top: 1.5rem; padding: 1rem; border-radius: 8px; display: none; }
+        .message.success { background-color: #d4edda; color: #155724; }
+        .message.error { background-color: #f8d7da; color: #721c24; }
+        #xml-viewer {
+            width: 100%;
+            max-width: 600px;
+            margin-top: 2rem;
+            border-radius: 10px;
+            overflow: hidden;
+            display: none;
+            background-color: #f8f9fa; /* Fondo claro para texto plano */
+            border: 1px solid #dee2e6;
+        }
+        #xml-viewer pre {
+            margin: 0;
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 1rem;
+            color: #212529; /* Color de texto oscuro */
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .secondary-module {
+            box-sizing: border-box;
+            width: min(100%, 770px);
+            max-width: 770px;
+            margin-top: 2rem;
+            padding: 0;
+            background: transparent;
+            box-shadow: none;
+            color: #202b3a;
+            font-family: Georgia, "Times New Roman", serif;
+        }
+        .secondary-module h2 {
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 2.15rem;
+            line-height: 1.15;
+            text-align: center;
+            color: #142033;
+            margin: 0 0 0.55rem;
+        }
+        .module-subtitle {
+            text-align: center;
+            color: #687386;
+            font: 1rem/1.55 Georgia, "Times New Roman", serif;
+            margin: 0 auto 1.5rem;
+            max-width: 620px;
+        }
+        .module-selector {
+            display: flex;
+            gap: 0.25rem;
+            padding: 6px;
+            margin-bottom: 1.35rem;
+            background: #fff;
+            border: 1px solid #dce3eb;
+            border-radius: 15px;
+            box-shadow: 0 2px 8px rgba(24, 39, 59, 0.035);
+        }
+        .module-tab {
+            flex: 1;
+            min-height: 44px;
+            padding: 0.7rem 1rem;
+            background: transparent;
+            border-radius: 10px;
+            color: #536174;
+            font: 600 0.95rem Georgia, "Times New Roman", serif;
+        }
+        .module-tab.active {
+            background: #ed570b;
+            color: #fff;
+            box-shadow: 0 2px 5px rgba(197, 69, 10, 0.18);
+        }
+        .module-panel {
+            position: relative;
+            overflow: hidden;
+            background: #fff;
+            border: 1px solid #dce3eb;
+            border-radius: 15px;
+            box-shadow: 0 12px 28px rgba(24, 39, 59, 0.075);
+        }
+        .module-panel::before {
+            content: "";
+            display: block;
+            height: 7px;
+            background: linear-gradient(90deg, #f47a1f, #e94b32);
+        }
+        .module-panel-inner {
+            padding: 31px 32px 32px;
+        }
+        .module-panel-heading {
+            margin: 0 0 2rem;
+        }
+        .module-panel-heading h3 {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            margin: 0 0 0.45rem;
+            color: #202b3a;
+            font: 700 1.2rem/1.35 Georgia, "Times New Roman", serif;
+        }
+        .module-panel-heading svg {
+            width: 20px;
+            height: 20px;
+            flex: 0 0 auto;
+            color: #64748b;
+        }
+        .module-panel-heading p {
+            margin: 0;
+            color: #687386;
+            font: 0.95rem/1.55 Georgia, "Times New Roman", serif;
+        }
+        .module-field {
+            margin-bottom: 1.4rem;
+        }
+        .module-field > label,
+        .module-format-heading {
+            display: block;
+            margin: 0 0 0.7rem;
+            color: #303b4b;
+            font: 0.92rem Georgia, "Times New Roman", serif;
+        }
+        .module-field input[type="number"] {
+            width: 100%;
+            min-height: 55px;
+            padding: 0.75rem 1rem;
+            border: 1px solid #dbe2ea;
+            border-radius: 12px;
+            box-sizing: border-box;
+            background: #fbfcfe;
+            color: #243044;
+            font: 1rem Georgia, "Times New Roman", serif;
+        }
+        .module-format-heading {
+            margin-bottom: 0.8rem;
+        }
+        .module-format-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.2rem;
+        }
+        .module-format-options label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            margin: 0;
+            color: #3f4b5b;
+            font: 0.92rem Georgia, "Times New Roman", serif;
+        }
+        .module-format-options input {
+            margin: 0;
+            accent-color: #ed570b;
+        }
+        #standings-text,
+        #acb-standings-text {
+            width: 100%;
+            min-height: 220px;
+            padding: 0.85rem 1rem;
+            border: 1px solid #dbe2ea;
+            border-radius: 12px;
+            box-sizing: border-box;
+            resize: vertical;
+            background: #fbfcfe;
+            color: #243044;
+            font: 0.9rem/1.5 "SFMono-Regular", Consolas, monospace;
+        }
+        .module-help {
+            margin: 0.55rem 0 0;
+            color: #6b7788;
+            font: 0.8rem/1.45 Georgia, "Times New Roman", serif;
+        }
+        .module-submit {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.8rem;
+            width: 100%;
+            min-height: 54px;
+            flex-grow: 0;
+            border-radius: 11px;
+            background: linear-gradient(105deg, #f36a12, #e84912);
+            box-shadow: 0 7px 14px rgba(218, 79, 17, 0.19);
+            color: #fff;
+            font: 700 1rem Georgia, "Times New Roman", serif;
+        }
+        .module-submit:hover {
+            background: linear-gradient(105deg, #e95d0c, #d93c0a);
+        }
+        .module-submit span {
+            font: 1.25rem/1 Arial, sans-serif;
+        }
+        .module-form-actions {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 0.75rem;
+        }
+        .module-copy-submit {
+            min-height: 54px;
+            flex-grow: 0;
+            border-radius: 11px;
+            background: #344054;
+            color: #fff;
+            font: 700 1rem Georgia, "Times New Roman", serif;
+        }
+        .module-copy-submit:hover { background: #263244; }
+        .module-message {
+            display: none;
+            margin-top: 1rem;
+            padding: 0.85rem 1rem;
+            border: 1px solid transparent;
+            border-radius: 10px;
+            font: 0.92rem/1.45 Georgia, "Times New Roman", serif;
+        }
+        .module-message.success {
+            display: block;
+            background: #fff7ed;
+            border-color: #fed7aa;
+            color: #9a3412;
+        }
+        .module-message.error {
+            display: block;
+            background: #fff1f0;
+            border-color: #ffd1cb;
+            color: #a12b1e;
+        }
+        .module-result {
+            margin-top: 1.35rem;
+            padding: 1.25rem;
+            border: 1px solid #dce3eb;
+            border-radius: 14px;
+            background: #fff;
+            box-shadow: 0 8px 22px rgba(24, 39, 59, 0.06);
+        }
+        .module-result > label {
+            display: block;
+            margin-bottom: 0.65rem;
+            color: #303b4b;
+            font: 600 0.95rem Georgia, "Times New Roman", serif;
+        }
+        .module-result textarea {
+            display: block;
+            width: 100%;
+            min-height: 260px;
+            padding: 0.85rem;
+            border: 1px solid #dbe2ea;
+            border-radius: 10px;
+            box-sizing: border-box;
+            resize: vertical;
+            background: #fbfcfe;
+            color: #212529;
+            font: 0.78rem/1.45 "SFMono-Regular", Consolas, monospace;
+        }
+        .module-result-actions {
+            margin-top: 0.75rem;
+        }
+        .module-result-actions .btn-copy {
+            background: #ed570b;
+            color: #fff;
+        }
+        .module-result-actions .btn-download {
+            background: #344054;
+            color: #fff;
+        }
+        .acb-secondary-module {
+            margin-top: 3rem;
+        }
+        @media (max-width: 560px) {
+            body { padding: 1rem 0.75rem; }
+            .container { padding: 1.5rem 1.1rem; }
+            .buttons { flex-direction: column; gap: 0.65rem; }
+            .league-option { font-size: 0.9rem; }
+            .module-tab { font-size: 0.9rem; }
+            .module-format-options { flex-direction: column; gap: 0.7rem; }
+            .secondary-module { margin-top: 1.6rem; }
+            .acb-secondary-module { margin-top: 2.3rem; }
+            .secondary-module h2 { font-size: 1.7rem; }
+            .module-panel-inner { padding: 24px 20px 22px; }
+            .module-panel-heading { margin-bottom: 1.6rem; }
+            .module-result { padding: 1rem; }
+            .module-form-actions { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1><span role="img" aria-label="baloncesto">⛹️</span> Conversor de estadísticas</h1>
+    <p class="subtitle">Genera fichas XML de partidos de Euroliga y Liga Endesa</p>
+
+    <form id="scraper-form">
+        <div class="league-selector" role="group" aria-label="Selecciona la competición">
+            <button type="button" class="league-option active" data-league="euroleague" aria-pressed="true">Euroliga</button>
+            <button type="button" class="league-option" data-league="acb" aria-pressed="false">Liga Endesa (ACB)</button>
+        </div>
+
+        <div id="euroleague-fields">
+            <label for="url">URL de la página de estadísticas:</label>
+            <input type="url" id="url" name="url" value="https://live.euroleague.net/api/boxscore?gamecode=11&amp;seasoncode=E2025" required>
+            <div class="example"><b>Ejemplo:</b> https://live.euroleague.net/api/boxscore?gamecode=11&amp;seasoncode=E2025</div>
+        </div>
+        <div id="acb-fields" hidden>
+            <label for="match-id">Número de partido:</label>
+            <input type="text" id="match-id" name="match-id" inputmode="numeric" pattern="[0-9]*" placeholder="Ej.: 104669" autocomplete="off" disabled>
+            <div class="example">Introduce el identificador numérico del partido de Liga Endesa.</div>
+        </div>
+
+        <div class="buttons">
+            <button type="button" id="show-xml-btn" class="btn-preview">Vista previa XML</button>
+            <button type="submit" id="download-btn" class="btn-download">⬇️ Descargar XML</button>
+            <button type="button" id="copy-xml-btn" class="btn-copy">Copiar XML</button>
+        </div>
+    </form>
+
+    <div id="message-box" class="message"></div>
+</div>
+
+<!-- Contenedor donde se mostrará el XML (sin cambios) -->
+<div id="xml-viewer">
+    <pre><code id="xml-content" class="language-xml"></code></pre>
+</div>
+
+<section id="euroleague-modules" class="container secondary-module" aria-labelledby="euroleague-modules-title">
+    <h2 id="euroleague-modules-title">Conversor Euroliga a XML</h2>
+    <p class="module-subtitle">Genera resultados, próxima jornada y clasificación con los datos oficiales de Euroliga.</p>
+
+    <div class="module-selector" role="group" aria-label="Tipo de conversión de Euroliga">
+        <button type="button" class="module-tab active" data-module-mode="gameday" aria-pressed="true">
+            Jornadas
+        </button>
+        <button type="button" class="module-tab" data-module-mode="standings" aria-pressed="false">
+            Clasificación
+        </button>
+    </div>
+
+    <div id="gameday-module-panel" class="module-panel">
+        <div class="module-panel-inner">
+            <div class="module-panel-heading">
+                <h3>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <path d="M14 2v6h6M10 13l-2 2 2 2M14 13l2 2-2 2"></path>
+                    </svg>
+                    Configuración de Entrada
+                </h3>
+                <p>Introduce la jornada para generar sus resultados o el calendario de la próxima jornada.</p>
+            </div>
+            <form id="gameday-module-form">
+                <div class="module-field">
+                    <label for="module-gameday">Número de Jornada</label>
+                    <input type="number" id="module-gameday" min="1" max="38" value="1" required>
+                    <p class="module-help">Temporada 2026-2027 · Jornadas 1 a 38</p>
+                </div>
+                <div class="module-field">
+                    <p class="module-format-heading">Formato XML</p>
+                    <div class="module-format-options">
+                        <label>
+                            <input type="radio" name="euroleague-format" value="ELBR" checked>
+                            ELBR (Resultados)
+                        </label>
+                        <label>
+                            <input type="radio" name="euroleague-format" value="ELBP">
+                            ELBP (Próxima jornada)
+                        </label>
+                    </div>
+                </div>
+                <div class="module-form-actions">
+                    <button type="submit" id="gameday-module-submit" class="btn-preview module-submit">
+                        Convertir a XML <span aria-hidden="true">→</span>
+                    </button>
+                    <button type="button" id="gameday-module-copy-submit" class="module-copy-submit">
+                        Copiar XML
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="standings-module-panel" class="module-panel" hidden>
+        <div class="module-panel-inner">
+            <div class="module-panel-heading">
+                <h3>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M8 6h13M8 12h13M8 18h13"></path>
+                        <path d="M3 6h.01M3 12h.01M3 18h.01"></path>
+                    </svg>
+                    Configuración de Clasificación
+                </h3>
+                <p>Pega los datos de la clasificación para generar el XML ELBC.</p>
+            </div>
+            <form id="standings-module-form">
+                <div class="module-field">
+                    <label for="standings-text">Datos de clasificación</label>
+                    <textarea id="standings-text" required placeholder="Pega aquí el texto sin formato…&#10;&#10;Ejemplo:&#10;1&#10;FBB logo&#10;Fenerbahce Beko Istanbul&#10;28 21 7 75% 2310 2217"></textarea>
+                    <p class="module-help">Se leen la posición, el nombre del equipo y sus estadísticas. Puedes pegar varios equipos seguidos.</p>
+                </div>
+                <div class="module-form-actions">
+                    <button type="submit" id="standings-module-submit" class="btn-preview module-submit">
+                        Convertir a XML <span aria-hidden="true">→</span>
+                    </button>
+                    <button type="button" id="standings-module-copy-submit" class="module-copy-submit">
+                        Copiar XML
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="euroleague-module-message" class="module-message" role="status" aria-live="polite"></div>
+    <div id="euroleague-module-result" class="module-result" hidden>
+        <label for="euroleague-module-xml">Resultado XML:</label>
+        <textarea id="euroleague-module-xml" readonly spellcheck="false"></textarea>
+        <div class="buttons module-result-actions">
+            <button type="button" id="euroleague-module-copy" class="btn-copy">Copiar XML</button>
+            <button type="button" id="euroleague-module-download" class="btn-download">Descargar XML</button>
+        </div>
+    </div>
+</section>
+
+<section id="acb-modules" class="container secondary-module acb-secondary-module" aria-labelledby="acb-modules-title">
+    <h2 id="acb-modules-title">Más conversiones de ACB</h2>
+    <p class="module-subtitle">Genera resultados, próxima jornada y clasificación de Liga Endesa en XML.</p>
+
+    <div class="module-selector" role="group" aria-label="Tipo de conversión de ACB">
+        <button type="button" class="module-tab active" data-acb-module-mode="gameday" aria-pressed="true">
+            Jornadas
+        </button>
+        <button type="button" class="module-tab" data-acb-module-mode="standings" aria-pressed="false">
+            Clasificación
+        </button>
+    </div>
+
+    <div id="acb-gameday-module-panel" class="module-panel">
+        <div class="module-panel-inner">
+            <div class="module-panel-heading">
+                <h3>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <path d="M14 2v6h6M10 13l-2 2 2 2M14 13l2 2-2 2"></path>
+                    </svg>
+                    Configuración de Jornada
+                </h3>
+                <p>Introduce la jornada para generar sus resultados o el calendario de la próxima jornada de ACB.</p>
+            </div>
+            <form id="acb-gameday-module-form">
+                <div class="module-field">
+                    <label for="acb-module-gameday">Número de Jornada</label>
+                    <input type="number" id="acb-module-gameday" min="1" max="34" value="19" required>
+                    <p class="module-help">Temporada 2026-2027 · Jornadas 1 a 34</p>
+                </div>
+                <div class="module-field">
+                    <p id="acb-format-heading" class="module-format-heading">Formato XML</p>
+                    <div class="module-format-options" role="radiogroup" aria-labelledby="acb-format-heading">
+                        <label>
+                            <input type="radio" name="acb-format" value="ELBR" checked>
+                            ELBR (Resultados)
+                        </label>
+                        <label>
+                            <input type="radio" name="acb-format" value="ELBP">
+                            ELBP (Próxima jornada)
+                        </label>
+                    </div>
+                </div>
+                <div class="module-form-actions">
+                    <button type="submit" id="acb-gameday-module-submit" class="btn-preview module-submit">
+                        Convertir a XML <span aria-hidden="true">→</span>
+                    </button>
+                    <button type="button" id="acb-gameday-module-copy-submit" class="module-copy-submit">
+                        Copiar XML
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="acb-standings-module-panel" class="module-panel" hidden>
+        <div class="module-panel-inner">
+            <div class="module-panel-heading">
+                <h3>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M8 6h13M8 12h13M8 18h13"></path>
+                        <path d="M3 6h.01M3 12h.01M3 18h.01"></path>
+                    </svg>
+                    Configuración de Clasificación
+                </h3>
+                <p>Pega el texto de la clasificación de ACB.com para generar el XML ACB-0001.</p>
+            </div>
+            <form id="acb-standings-module-form">
+                <div class="module-field">
+                    <label for="acb-standings-text">Datos de clasificación</label>
+                    <textarea id="acb-standings-text" required placeholder="Pega aquí la tabla copiada de ACB.com…&#10;&#10;Ejemplo:&#10;1&#10;Real Madrid&#10;Real Madrid&#10;15&#10;13&#10;2&#10;87%&#10;1.369&#10;1.238"></textarea>
+                    <p class="module-help">Copia la clasificación desde ACB.com y pégala aquí como texto. Se extraen equipo, victorias, derrotas y puntos a favor y en contra.</p>
+                </div>
+                <div class="module-form-actions">
+                    <button type="submit" id="acb-standings-module-submit" class="btn-preview module-submit">
+                        Convertir a XML <span aria-hidden="true">→</span>
+                    </button>
+                    <button type="button" id="acb-standings-module-copy-submit" class="module-copy-submit">
+                        Copiar XML
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="acb-module-message" class="module-message" role="status" aria-live="polite"></div>
+    <div id="acb-module-result" class="module-result" hidden>
+        <label for="acb-module-xml">Resultado XML:</label>
+        <textarea id="acb-module-xml" readonly spellcheck="false"></textarea>
+        <div class="buttons module-result-actions">
+            <button type="button" id="acb-module-copy" class="btn-copy">Copiar XML</button>
+            <button type="button" id="acb-module-download" class="btn-download">Descargar XML</button>
+        </div>
+    </div>
+</section>
+
+<script>
+    const form = document.getElementById('scraper-form');
+    const urlInput = document.getElementById('url');
+    const matchIdInput = document.getElementById('match-id');
+    const euroleagueFields = document.getElementById('euroleague-fields');
+    const acbFields = document.getElementById('acb-fields');
+    const showXmlBtn = document.getElementById('show-xml-btn');
+    const downloadBtn = document.getElementById('download-btn');
+    const copyXmlBtn = document.getElementById('copy-xml-btn');
+    const messageBox = document.getElementById('message-box');
+    const xmlViewer = document.getElementById('xml-viewer');
+    const xmlContent = document.getElementById('xml-content');
+    let selectedLeague = 'euroleague';
+
+    async function copyTextToClipboard(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            try {
+                await navigator.clipboard.writeText(text);
+                return;
+            } catch (error) {
+                // Try the selection-based method below when clipboard permission is unavailable.
+            }
+        }
+
+        const copyField = document.createElement('textarea');
+        copyField.value = text;
+        copyField.setAttribute('readonly', '');
+        copyField.style.position = 'fixed';
+        copyField.style.opacity = '0';
+        document.body.appendChild(copyField);
+        copyField.select();
+        const copied = document.execCommand('copy');
+        copyField.remove();
+        if (!copied) {
+            throw new Error('El navegador no permitió copiar el XML.');
+        }
+    }
+
+    async function generateAndCopyModuleXml({
+        generateXml,
+        buttons,
+        clearResult,
+        showStatus,
+        loadingMessage,
+        copiedMessage
+    }) {
+        clearResult();
+        buttons.forEach((button) => { button.disabled = true; });
+        showStatus(loadingMessage, 'success');
+        try {
+            const xmlContent = await generateXml();
+            await copyTextToClipboard(xmlContent);
+            showStatus(copiedMessage, 'success');
+        } catch (error) {
+            showStatus(`Error: ${error.message}`, 'error');
+        } finally {
+            buttons.forEach((button) => { button.disabled = false; });
+        }
+    }
+
+    document.querySelectorAll('.league-option').forEach((button) => {
+        button.addEventListener('click', () => {
+            selectedLeague = button.dataset.league;
+            document.querySelectorAll('.league-option').forEach((option) => {
+                const isActive = option === button;
+                option.classList.toggle('active', isActive);
+                option.setAttribute('aria-pressed', String(isActive));
+            });
+            const isAcb = selectedLeague === 'acb';
+            euroleagueFields.hidden = isAcb;
+            acbFields.hidden = !isAcb;
+            urlInput.disabled = isAcb;
+            urlInput.required = !isAcb;
+            matchIdInput.disabled = !isAcb;
+            matchIdInput.required = isAcb;
+            xmlViewer.style.display = 'none';
+            messageBox.style.display = 'none';
+        });
+    });
+
+    function getRequestBody() {
+        return selectedLeague === 'acb'
+            ? { league: 'acb', matchId: matchIdInput.value.trim() }
+            : { league: 'euroleague', url: urlInput.value.trim() };
+    }
+
+    async function getXmlResponse(endpoint) {
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(getRequestBody())
+        });
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || 'No se pudo generar el XML.');
+        }
+        return response;
+    }
+
+    function setBusy(isBusy) {
+        showXmlBtn.disabled = isBusy;
+        downloadBtn.disabled = isBusy;
+        copyXmlBtn.disabled = isBusy;
+    }
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const body = getRequestBody();
+        if (selectedLeague === 'acb' && !body.matchId) {
+            showMessage('Introduce el número de partido de Liga Endesa.', 'error');
+            return;
+        }
+        if (selectedLeague === 'euroleague' && !body.url) {
+            showMessage('Introduce la URL del partido de Euroliga.', 'error');
+            return;
+        }
+
+        setBusy(true);
+        showMessage('Generando y descargando el XML...', 'success');
+        try {
+            const response = await getXmlResponse('/download');
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = selectedLeague === 'acb'
+                ? `estadisticas_acb_${body.matchId}.xml`
+                : 'estadisticas_euroliga.xml';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(downloadUrl);
+            showMessage('Archivo XML descargado correctamente.', 'success');
+        } catch (error) {
+            showMessage(error.message.startsWith('Failed to fetch')
+                ? `Error de conexión: ${error.message}`
+                : `Error: ${error.message}`, 'error');
+        } finally {
+            setBusy(false);
+        }
+    });
+
+    showXmlBtn.addEventListener('click', async () => {
+        const body = getRequestBody();
+        if (selectedLeague === 'acb' && !body.matchId) {
+            showMessage('Introduce el número de partido de Liga Endesa.', 'error');
+            return;
+        }
+        if (selectedLeague === 'euroleague' && !body.url) {
+            showMessage('Introduce la URL del partido de Euroliga.', 'error');
+            return;
+        }
+
+        setBusy(true);
+        xmlViewer.style.display = 'none';
+        showMessage('Generando vista previa...', 'success');
+        try {
+            const response = await getXmlResponse('/generate_xml_content');
+            const data = await response.json();
+            xmlContent.textContent = data.xml_content;
+            xmlViewer.style.display = 'block';
+            showMessage('Vista previa generada correctamente.', 'success');
+        } catch (error) {
+            showMessage(error.message.startsWith('Failed to fetch')
+                ? `Error de conexión: ${error.message}`
+                : `Error: ${error.message}`, 'error');
+        } finally {
+            setBusy(false);
+        }
+    });
+
+    copyXmlBtn.addEventListener('click', async () => {
+        const body = getRequestBody();
+        if (selectedLeague === 'acb' && !body.matchId) {
+            showMessage('Introduce el número de partido de Liga Endesa.', 'error');
+            return;
+        }
+        if (selectedLeague === 'euroleague' && !body.url) {
+            showMessage('Introduce la URL del partido de Euroliga.', 'error');
+            return;
+        }
+
+        setBusy(true);
+        showMessage('Generando y copiando el XML...', 'success');
+        try {
+            const response = await getXmlResponse('/generate_xml_content');
+            const data = await response.json();
+            xmlContent.textContent = data.xml_content;
+            xmlViewer.style.display = 'block';
+            await copyTextToClipboard(data.xml_content);
+            showMessage('XML generado y copiado al portapapeles.', 'success');
+        } catch (error) {
+            showMessage(error.message.startsWith('Failed to fetch')
+                ? `Error de conexión: ${error.message}`
+                : `Error: ${error.message}`, 'error');
+        } finally {
+            setBusy(false);
+        }
+    });
+    const moduleTabs = document.querySelectorAll('#euroleague-modules .module-tab');
+    const gamedayModulePanel = document.getElementById('gameday-module-panel');
+    const standingsModulePanel = document.getElementById('standings-module-panel');
+    const gamedayModuleForm = document.getElementById('gameday-module-form');
+    const standingsModuleForm = document.getElementById('standings-module-form');
+    const gamedayModuleSubmit = document.getElementById('gameday-module-submit');
+    const standingsModuleSubmit = document.getElementById('standings-module-submit');
+    const gamedayModuleCopySubmit = document.getElementById('gameday-module-copy-submit');
+    const standingsModuleCopySubmit = document.getElementById('standings-module-copy-submit');
+    const moduleMessage = document.getElementById('euroleague-module-message');
+    const moduleResult = document.getElementById('euroleague-module-result');
+    const moduleXml = document.getElementById('euroleague-module-xml');
+    const moduleCopyButton = document.getElementById('euroleague-module-copy');
+    const moduleDownloadButton = document.getElementById('euroleague-module-download');
+    let moduleFilename = 'ELBR.xml';
+
+    function clearEuroleagueModuleResult() {
+        moduleResult.hidden = true;
+        moduleXml.value = '';
+        moduleMessage.className = 'module-message';
+        moduleMessage.textContent = '';
+    }
+
+    function showEuroleagueModuleMessage(text, type) {
+        moduleMessage.textContent = text;
+        moduleMessage.className = `module-message ${type}`;
+    }
+
+    moduleTabs.forEach((tab) => {
+        tab.addEventListener('click', () => {
+            const showStandings = tab.dataset.moduleMode === 'standings';
+            moduleTabs.forEach((button) => {
+                const active = button === tab;
+                button.classList.toggle('active', active);
+                button.setAttribute('aria-pressed', String(active));
+            });
+            gamedayModulePanel.hidden = showStandings;
+            standingsModulePanel.hidden = !showStandings;
+            clearEuroleagueModuleResult();
+        });
+    });
+
+    async function requestEuroleagueModuleXml(endpoint, body) {
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body)
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(data.error || 'No se pudo generar el XML.');
+        }
+        moduleXml.value = data.xml_content;
+        moduleFilename = data.filename;
+        moduleResult.hidden = false;
+        showEuroleagueModuleMessage('XML generado correctamente.', 'success');
+        return data.xml_content;
+    }
+
+    gamedayModuleForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const gameday = Number(document.getElementById('module-gameday').value);
+        const format = document.querySelector('input[name="euroleague-format"]:checked').value;
+        if (!Number.isInteger(gameday) || gameday < 1 || gameday > 38) {
+            showEuroleagueModuleMessage('La jornada debe estar entre 1 y 38.', 'error');
+            return;
+        }
+
+        clearEuroleagueModuleResult();
+        gamedayModuleSubmit.disabled = true;
+        gamedayModuleCopySubmit.disabled = true;
+        showEuroleagueModuleMessage('Consultando los datos de Euroliga...', 'success');
+        try {
+            await requestEuroleagueModuleXml('/convert_euroleague_gameday', {gameday, format});
+        } catch (error) {
+            showEuroleagueModuleMessage(`Error: ${error.message}`, 'error');
+        } finally {
+            gamedayModuleSubmit.disabled = false;
+            gamedayModuleCopySubmit.disabled = false;
+        }
+    });
+
+    standingsModuleForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const text = document.getElementById('standings-text').value;
+        if (!text.trim()) {
+            showEuroleagueModuleMessage('Pega los datos de la clasificación.', 'error');
+            return;
+        }
+
+        clearEuroleagueModuleResult();
+        standingsModuleSubmit.disabled = true;
+        standingsModuleCopySubmit.disabled = true;
+        showEuroleagueModuleMessage('Convirtiendo la clasificación...', 'success');
+        try {
+            await requestEuroleagueModuleXml('/convert_euroleague_standings', {text});
+        } catch (error) {
+            showEuroleagueModuleMessage(`Error: ${error.message}`, 'error');
+        } finally {
+            standingsModuleSubmit.disabled = false;
+            standingsModuleCopySubmit.disabled = false;
+        }
+    });
+
+    gamedayModuleCopySubmit.addEventListener('click', () => {
+        const gameday = Number(document.getElementById('module-gameday').value);
+        const format = document.querySelector('input[name="euroleague-format"]:checked').value;
+        if (!Number.isInteger(gameday) || gameday < 1 || gameday > 38) {
+            showEuroleagueModuleMessage('La jornada debe estar entre 1 y 38.', 'error');
+            return;
+        }
+
+        generateAndCopyModuleXml({
+            generateXml: () => requestEuroleagueModuleXml(
+                '/convert_euroleague_gameday',
+                {gameday, format}
+            ),
+            buttons: [gamedayModuleSubmit, gamedayModuleCopySubmit],
+            clearResult: clearEuroleagueModuleResult,
+            showStatus: showEuroleagueModuleMessage,
+            loadingMessage: 'Generando y copiando el XML de Euroliga...',
+            copiedMessage: 'XML de Euroliga generado y copiado.'
+        });
+    });
+
+    standingsModuleCopySubmit.addEventListener('click', () => {
+        const text = document.getElementById('standings-text').value;
+        if (!text.trim()) {
+            showEuroleagueModuleMessage('Pega los datos de la clasificación.', 'error');
+            return;
+        }
+
+        generateAndCopyModuleXml({
+            generateXml: () => requestEuroleagueModuleXml(
+                '/convert_euroleague_standings',
+                {text}
+            ),
+            buttons: [standingsModuleSubmit, standingsModuleCopySubmit],
+            clearResult: clearEuroleagueModuleResult,
+            showStatus: showEuroleagueModuleMessage,
+            loadingMessage: 'Generando y copiando la clasificación...',
+            copiedMessage: 'Clasificación de Euroliga generada y copiada.'
+        });
+    });
+
+    moduleCopyButton.addEventListener('click', async () => {
+        try {
+            await copyTextToClipboard(moduleXml.value);
+            showEuroleagueModuleMessage('XML copiado al portapapeles.', 'success');
+        } catch (error) {
+            showEuroleagueModuleMessage('No se pudo copiar. Selecciona y copia el XML manualmente.', 'error');
+        }
+    });
+
+    moduleDownloadButton.addEventListener('click', () => {
+        const blob = new Blob([moduleXml.value], {type: 'application/xml;charset=utf-8'});
+        const downloadUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = moduleFilename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(downloadUrl);
+    });
+
+    const acbModuleTabs = document.querySelectorAll('#acb-modules .module-tab');
+    const acbGamedayPanel = document.getElementById('acb-gameday-module-panel');
+    const acbStandingsPanel = document.getElementById('acb-standings-module-panel');
+    const acbGamedayForm = document.getElementById('acb-gameday-module-form');
+    const acbStandingsForm = document.getElementById('acb-standings-module-form');
+    const acbGamedaySubmit = document.getElementById('acb-gameday-module-submit');
+    const acbStandingsSubmit = document.getElementById('acb-standings-module-submit');
+    const acbGamedayCopySubmit = document.getElementById('acb-gameday-module-copy-submit');
+    const acbStandingsCopySubmit = document.getElementById('acb-standings-module-copy-submit');
+    const acbModuleMessage = document.getElementById('acb-module-message');
+    const acbModuleResult = document.getElementById('acb-module-result');
+    const acbModuleXml = document.getElementById('acb-module-xml');
+    const acbModuleCopyButton = document.getElementById('acb-module-copy');
+    const acbModuleDownloadButton = document.getElementById('acb-module-download');
+    let acbModuleFilename = 'ELBR.xml';
+
+    function clearAcbModuleResult() {
+        acbModuleResult.hidden = true;
+        acbModuleXml.value = '';
+        acbModuleMessage.className = 'module-message';
+        acbModuleMessage.textContent = '';
+    }
+
+    function showAcbModuleMessage(text, type) {
+        acbModuleMessage.textContent = text;
+        acbModuleMessage.className = `module-message ${type}`;
+    }
+
+    acbModuleTabs.forEach((tab) => {
+        tab.addEventListener('click', () => {
+            const showStandings = tab.dataset.acbModuleMode === 'standings';
+            acbModuleTabs.forEach((button) => {
+                const active = button === tab;
+                button.classList.toggle('active', active);
+                button.setAttribute('aria-pressed', String(active));
+            });
+            acbGamedayPanel.hidden = showStandings;
+            acbStandingsPanel.hidden = !showStandings;
+            clearAcbModuleResult();
+        });
+    });
+
+    async function requestAcbModuleXml(endpoint, body) {
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body)
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(data.error || 'No se pudo generar el XML de ACB.');
+        }
+        acbModuleXml.value = data.xml_content;
+        acbModuleFilename = data.filename;
+        acbModuleResult.hidden = false;
+        showAcbModuleMessage('XML de ACB generado correctamente.', 'success');
+        return data.xml_content;
+    }
+
+    acbGamedayForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const gameday = Number(document.getElementById('acb-module-gameday').value);
+        const format = document.querySelector('input[name="acb-format"]:checked').value;
+        if (!Number.isInteger(gameday) || gameday < 1 || gameday > 34) {
+            showAcbModuleMessage('La jornada debe estar entre 1 y 34.', 'error');
+            return;
+        }
+
+        clearAcbModuleResult();
+        acbGamedaySubmit.disabled = true;
+        acbGamedayCopySubmit.disabled = true;
+        showAcbModuleMessage('Consultando los datos oficiales de ACB...', 'success');
+        try {
+            await requestAcbModuleXml('/convert_acb_gameday', {gameday, format});
+        } catch (error) {
+            showAcbModuleMessage(`Error: ${error.message}`, 'error');
+        } finally {
+            acbGamedaySubmit.disabled = false;
+            acbGamedayCopySubmit.disabled = false;
+        }
+    });
+
+    acbStandingsForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const text = document.getElementById('acb-standings-text').value;
+        if (!text.trim()) {
+            showAcbModuleMessage('Pega los datos de la clasificación de ACB.', 'error');
+            return;
+        }
+
+        clearAcbModuleResult();
+        acbStandingsSubmit.disabled = true;
+        acbStandingsCopySubmit.disabled = true;
+        showAcbModuleMessage('Convirtiendo la clasificación de ACB...', 'success');
+        try {
+            await requestAcbModuleXml('/convert_acb_standings', {text});
+        } catch (error) {
+            showAcbModuleMessage(`Error: ${error.message}`, 'error');
+        } finally {
+            acbStandingsSubmit.disabled = false;
+            acbStandingsCopySubmit.disabled = false;
+        }
+    });
+
+    acbGamedayCopySubmit.addEventListener('click', () => {
+        const gameday = Number(document.getElementById('acb-module-gameday').value);
+        const format = document.querySelector('input[name="acb-format"]:checked').value;
+        if (!Number.isInteger(gameday) || gameday < 1 || gameday > 34) {
+            showAcbModuleMessage('La jornada debe estar entre 1 y 34.', 'error');
+            return;
+        }
+
+        generateAndCopyModuleXml({
+            generateXml: () => requestAcbModuleXml(
+                '/convert_acb_gameday',
+                {gameday, format}
+            ),
+            buttons: [acbGamedaySubmit, acbGamedayCopySubmit],
+            clearResult: clearAcbModuleResult,
+            showStatus: showAcbModuleMessage,
+            loadingMessage: 'Generando y copiando el XML de ACB...',
+            copiedMessage: 'XML de ACB generado y copiado.'
+        });
+    });
+
+    acbStandingsCopySubmit.addEventListener('click', () => {
+        const text = document.getElementById('acb-standings-text').value;
+        if (!text.trim()) {
+            showAcbModuleMessage('Pega los datos de la clasificación de ACB.', 'error');
+            return;
+        }
+
+        generateAndCopyModuleXml({
+            generateXml: () => requestAcbModuleXml(
+                '/convert_acb_standings',
+                {text}
+            ),
+            buttons: [acbStandingsSubmit, acbStandingsCopySubmit],
+            clearResult: clearAcbModuleResult,
+            showStatus: showAcbModuleMessage,
+            loadingMessage: 'Generando y copiando la clasificación ACB...',
+            copiedMessage: 'Clasificación de ACB generada y copiada.'
+        });
+    });
+
+    acbModuleCopyButton.addEventListener('click', async () => {
+        try {
+            await copyTextToClipboard(acbModuleXml.value);
+            showAcbModuleMessage('XML de ACB copiado al portapapeles.', 'success');
+        } catch (error) {
+            showAcbModuleMessage('No se pudo copiar. Selecciona y copia el XML manualmente.', 'error');
+        }
+    });
+
+    acbModuleDownloadButton.addEventListener('click', () => {
+        const blob = new Blob([acbModuleXml.value], {type: 'application/xml;charset=utf-8'});
+        const downloadUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = acbModuleFilename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(downloadUrl);
+    });
+
+    function showMessage(text, type) {
+        messageBox.textContent = text;
+        messageBox.className = `message ${type}`;
+        messageBox.style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
