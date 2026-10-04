@@ -11,6 +11,7 @@ import requests
 
 
 API_URL = "https://api2.acb.com/api/matchdata/Menu/matchlist"
+STANDINGS_API_URL = "https://api2.acb.com/api/matchdata/Standings"
 SYSTEM_CA_BUNDLE = ssl.get_default_verify_paths().cafile
 MADRID_TIMEZONE = ZoneInfo("Europe/Madrid")
 
@@ -19,6 +20,9 @@ BASE_GAMEDAY = 19
 BASE_MATCH_ID = 105537
 MATCHES_PER_GAMEDAY = 9
 MAX_GAMEDAY = 34
+
+# ID de la temporada actual (2024/2025). Si cambia en el futuro, solo hay que modificar este número.
+ACB_SEASON_ID = 2024
 
 MONTH_NAMES = (
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -308,10 +312,74 @@ def parse_standings_text(text):
     return teams
 
 
-def generate_standings_xml(text):
-    if not isinstance(text, str) or not text.strip():
-        raise ValueError("Pega los datos de la clasificación de ACB.")
-    teams = parse_standings_text(text)
+def _fetch_acb_standings():
+    """Obtiene la clasificación directamente de la API de ACB."""
+    api_key = os.environ.get("ACB_API_KEY", "").strip()
+    if not api_key:
+        raise ACBApiError("Falta configurar el secreto ACB_API_KEY.")
+
+    headers = {
+        "x-apikey": api_key,
+        "origin": "https://live.acb.com",
+        "referer": "https://live.acb.com/",
+        "User-Agent": "Mozilla/5.0",
+        "Accept": "application/json",
+    }
+    try:
+        response = requests.get(
+            STANDINGS_API_URL,
+            params={"competitionId": 1, "seasonId": ACB_SEASON_ID},
+            headers=headers,
+            timeout=20,
+            verify=SYSTEM_CA_BUNDLE or True,
+        )
+        response.raise_for_status()
+    except requests.RequestException as error:
+        raise ACBApiError("No se pudo consultar el servicio de clasificación de ACB.") from error
+
+    try:
+        data = response.json()
+    except ValueError as error:
+        raise ACBApiError("El servicio de ACB devolvió una respuesta no válida para la clasificación.") from error
+
+    items = data if isinstance(data, list) else (data.get("standings", []) if isinstance(data, dict) else [])
+    if not items:
+        raise ACBApiError("La API de ACB no devolvió datos de clasificación.")
+
+    teams = []
+    for index, item in enumerate(items, start=1):
+        if not isinstance(item, dict):
+            continue
+        
+        # Intentamos extraer el nombre del equipo (la estructura puede variar)
+        team_info = item.get("team") if isinstance(item.get("team"), dict) else item
+        name = team_info.get("fullName") or team_info.get("name") or team_info.get("shortName") or ""
+        
+        if not name:
+            continue
+            
+        teams.append({
+            "position": item.get("position", index),
+            "name": str(name).strip(),
+            "wins": _stat_integer(item.get("gamesWon", item.get("wins", 0))),
+            "losses": _stat_integer(item.get("gamesLost", item.get("losses", 0))),
+            "points_for": _stat_integer(item.get("pointsFor", 0)),
+            "points_against": _stat_integer(item.get("pointsAgainst", 0)),
+        })
+
+    if not teams:
+        raise ACBApiError("No se pudieron extraer equipos de la respuesta de la API de ACB.")
+
+    return teams
+
+
+def generate_standings_xml(text=None):
+    """Genera el XML de clasificación. Si no se pasa texto, lo pilla de la API."""
+    if text and text.strip():
+        teams = parse_standings_text(text)
+    else:
+        teams = _fetch_acb_standings()
+        
     if not teams:
         raise ValueError(
             "No se encontraron equipos. Copia la tabla de ACB.com como texto e inténtalo de nuevo."
