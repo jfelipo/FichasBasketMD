@@ -522,17 +522,17 @@
                     </svg>
                     Configuración de Clasificación
                 </h3>
-                <p>Pega el texto de la clasificación de ACB.com para generar el XML ACB-0001.</p>
+                <p>Genera la clasificación de ACB directamente desde internet. No hace falta pegar nada.</p>
             </div>
             <form id="acb-standings-module-form">
                 <div class="module-field">
-                    <label for="acb-standings-text">Datos de clasificación</label>
-                    <textarea id="acb-standings-text" required placeholder="Pega aquí la tabla copiada de ACB.com…&#10;&#10;Ejemplo:&#10;1&#10;Real Madrid&#10;Real Madrid&#10;15&#10;13&#10;2&#10;87%&#10;1.369&#10;1.238"></textarea>
-                    <p class="module-help">Copia la clasificación desde ACB.com y pégala aquí como texto. Se extraen equipo, victorias, derrotas y puntos a favor y en contra.</p>
+                    <label for="acb-standings-text">Datos de clasificación (Opcional)</label>
+                    <textarea id="acb-standings-text" placeholder="Deja esta caja vacía para obtener la clasificación automáticamente..."></textarea>
+                    <p class="module-help">Si dejas la caja vacía, el sistema descargará la última clasificación oficial de ACB.</p>
                 </div>
                 <div class="module-form-actions">
                     <button type="submit" id="acb-standings-module-submit" class="btn-preview module-submit">
-                        Convertir a XML <span aria-hidden="true">→</span>
+                        Generar XML Automático <span aria-hidden="true">→</span>
                     </button>
                     <button type="button" id="acb-standings-module-copy-submit" class="module-copy-submit">
                         Copiar XML
@@ -1003,15 +1003,11 @@
     acbStandingsForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         const text = document.getElementById('acb-standings-text').value;
-        if (!text.trim()) {
-            showAcbModuleMessage('Pega los datos de la clasificación de ACB.', 'error');
-            return;
-        }
 
         clearAcbModuleResult();
         acbStandingsSubmit.disabled = true;
         acbStandingsCopySubmit.disabled = true;
-        showAcbModuleMessage('Convirtiendo la clasificación de ACB...', 'success');
+        showAcbModuleMessage('Descargando clasificación de ACB...', 'success');
         try {
             await requestAcbModuleXml('/convert_acb_standings', {text});
         } catch (error) {
@@ -1045,10 +1041,6 @@
 
     acbStandingsCopySubmit.addEventListener('click', () => {
         const text = document.getElementById('acb-standings-text').value;
-        if (!text.trim()) {
-            showAcbModuleMessage('Pega los datos de la clasificación de ACB.', 'error');
-            return;
-        }
 
         generateAndCopyModuleXml({
             generateXml: () => requestAcbModuleXml(
@@ -1058,7 +1050,7 @@
             buttons: [acbStandingsSubmit, acbStandingsCopySubmit],
             clearResult: clearAcbModuleResult,
             showStatus: showAcbModuleMessage,
-            loadingMessage: 'Generando y copiando la clasificación ACB...',
+            loadingMessage: 'Descargando y copiando la clasificación ACB...',
             copiedMessage: 'Clasificación de ACB generada y copiada.'
         });
     });
