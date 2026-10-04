@@ -340,33 +340,41 @@ def _fetch_acb_standings():
     except ValueError as error:
         raise ACBApiError("El servicio de ACB devolvió una respuesta no válida para la clasificación.") from error
 
-    items = data if isinstance(data, list) else (data.get("standings", []) if isinstance(data, dict) else [])
-    if not items:
+    # 1. Primero extraemos la lista de equipos y creamos un diccionario para saber el nombre por ID
+    teams_list = data.get("teams", [])
+    team_names = {}
+    for team_info in teams_list:
+        if isinstance(team_info, dict):
+            team_names[team_info.get("id")] = team_info.get("fullName") or team_info.get("shortName") or ""
+
+    # 2. Ahora leemos la tabla de clasificación
+    standings = data.get("standings", [])
+    if not standings:
         raise ACBApiError("La API de ACB no devolvió datos de clasificación.")
 
     teams = []
-    for index, item in enumerate(items, start=1):
+    for item in standings:
         if not isinstance(item, dict):
             continue
-        
-        # Intentamos extraer el nombre del equipo (la estructura puede variar)
-        team_info = item.get("team") if isinstance(item.get("team"), dict) else item
-        name = team_info.get("fullName") or team_info.get("name") or team_info.get("shortName") or ""
-        
-        if not name:
-            continue
             
+        team_id = item.get("teamId")
+        name = team_names.get(team_id, "Equipo Desconocido")
+        
         teams.append({
-            "position": item.get("position", index),
+            "position": item.get("position", 0),
             "name": str(name).strip(),
-            "wins": _stat_integer(item.get("gamesWon", item.get("wins", 0))),
-            "losses": _stat_integer(item.get("gamesLost", item.get("losses", 0))),
-            "points_for": _stat_integer(item.get("pointsFor", item.get("favor", 0))),
-            "points_against": _stat_integer(item.get("pointsAgainst", item.get("contra", 0))),
+            "wins": _stat_integer(item.get("wins", 0)),
+            # En la API de ACB, derrotas se llama "loses" (con una sola 's' al final)
+            "losses": _stat_integer(item.get("loses", item.get("losses", 0))),
+            "points_for": _stat_integer(item.get("pointsFor", 0)),
+            "points_against": _stat_integer(item.get("pointsAgainst", 0)),
         })
 
     if not teams:
         raise ACBApiError("No se pudieron extraer equipos de la respuesta de la API de ACB.")
+
+    # Ordenamos por la posición por si acaso la API nos los da desordenados
+    teams.sort(key=lambda x: x["position"])
 
     return teams
 
