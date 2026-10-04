@@ -11,7 +11,7 @@ import requests
 
 
 API_URL = "https://api2.acb.com/api/matchdata/Menu/matchlist"
-STANDINGS_API_URL = "https://api2.acb.com/api/matchdata/Standings"
+STANDINGS_API_URL = "https://api2.acb.com/api/seasondata/Competition/standings"
 SYSTEM_CA_BUNDLE = ssl.get_default_verify_paths().cafile
 MADRID_TIMEZONE = ZoneInfo("Europe/Madrid")
 
@@ -20,9 +20,6 @@ BASE_GAMEDAY = 19
 BASE_MATCH_ID = 105537
 MATCHES_PER_GAMEDAY = 9
 MAX_GAMEDAY = 34
-
-# ID de la temporada actual (2024/2025). Si cambia en el futuro, solo hay que modificar este número.
-ACB_SEASON_ID = 2024
 
 MONTH_NAMES = (
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -326,9 +323,10 @@ def _fetch_acb_standings():
         "Accept": "application/json",
     }
     try:
+        # Usamos los parámetros exactos que nos pasaste
         response = requests.get(
             STANDINGS_API_URL,
-            params={"competitionId": 1, "seasonId": ACB_SEASON_ID},
+            params={"competitionId": 1, "editionId": 91, "roundId": 6016},
             headers=headers,
             timeout=20,
             verify=SYSTEM_CA_BUNDLE or True,
@@ -363,8 +361,8 @@ def _fetch_acb_standings():
             "name": str(name).strip(),
             "wins": _stat_integer(item.get("gamesWon", item.get("wins", 0))),
             "losses": _stat_integer(item.get("gamesLost", item.get("losses", 0))),
-            "points_for": _stat_integer(item.get("pointsFor", 0)),
-            "points_against": _stat_integer(item.get("pointsAgainst", 0)),
+            "points_for": _stat_integer(item.get("pointsFor", item.get("favor", 0))),
+            "points_against": _stat_integer(item.get("pointsAgainst", item.get("contra", 0))),
         })
 
     if not teams:
