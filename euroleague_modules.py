@@ -289,18 +289,50 @@ def parse_standings_text(text):
     return teams
 
 
+def _fetch_euroleague_standings():
+    """Obtiene la clasificación directamente de la API de Euroliga."""
+    root = _fetch_feed(
+        "standings",
+        {"competitionCode": "E", "seasonCode": EUROLEAGUE_SEASON},
+    )
+
+    teams = []
+    for item in _feed_items(root, "team"):
+        name = _child_text(item, "teamName") or _child_text(item, "name")
+        if not name:
+            continue
+        try:
+            rank = int(item.get("position", 0))
+        except (ValueError, TypeError):
+            rank = 0
+
+        teams.append({
+            "rank": rank,
+            "name": _team_name(name),
+            "wins": _child_text(item, "wins", "0"),
+            "losses": _child_text(item, "losses", "0"),
+            "points_for": _child_text(item, "pointsFor", "0"),
+            "points_against": _child_text(item, "pointsAgainst", "0"),
+        })
+
+    if not teams:
+        raise EuroleagueApiError("La API de Euroliga no devolvió equipos en la clasificación.")
+    return teams
+
+
 def _new_xml_id():
     return f"U{uuid4().hex[:13].upper()}"
 
 
-def generate_standings_xml(text):
-    if not isinstance(text, str) or not text.strip():
-        raise ValueError("Pega los datos de la clasificación.")
-    teams = parse_standings_text(text)
+def generate_standings_xml(text=None):
+    """Genera el XML de clasificación. Si no se pasa texto, lo pilla de la API."""
+    if text and text.strip():
+        teams = parse_standings_text(text)
+    else:
+        teams = _fetch_euroleague_standings()
+
     if not teams:
-        raise ValueError(
-            "No se encontraron equipos. Comprueba el formato de los datos pegados."
-        )
+        raise ValueError("No se encontraron equipos. Comprueba el formato de los datos pegados.")
 
     rows = []
     for team in teams:
