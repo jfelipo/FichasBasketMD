@@ -425,17 +425,17 @@
                     </svg>
                     Configuración de Clasificación
                 </h3>
-                <p>Pega los datos de la clasificación para generar el XML ELBC.</p>
+                <p>Genera la clasificación de Euroliga directamente desde internet. No hace falta pegar nada.</p>
             </div>
             <form id="standings-module-form">
                 <div class="module-field">
-                    <label for="standings-text">Datos de clasificación</label>
-                    <textarea id="standings-text" required placeholder="Pega aquí el texto sin formato…&#10;&#10;Ejemplo:&#10;1&#10;FBB logo&#10;Fenerbahce Beko Istanbul&#10;28 21 7 75% 2310 2217"></textarea>
-                    <p class="module-help">Se leen la posición, el nombre del equipo y sus estadísticas. Puedes pegar varios equipos seguidos.</p>
+                    <label for="standings-text">Datos de clasificación (Opcional)</label>
+                    <textarea id="standings-text" placeholder="Deja esta caja vacía para obtener la clasificación automáticamente..."></textarea>
+                    <p class="module-help">Si dejas la caja vacía, el sistema descargará la última clasificación oficial de Euroliga.</p>
                 </div>
                 <div class="module-form-actions">
                     <button type="submit" id="standings-module-submit" class="btn-preview module-submit">
-                        Convertir a XML <span aria-hidden="true">→</span>
+                        Generar XML Automático <span aria-hidden="true">→</span>
                     </button>
                     <button type="button" id="standings-module-copy-submit" class="module-copy-submit">
                         Copiar XML
@@ -837,15 +837,11 @@
     standingsModuleForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         const text = document.getElementById('standings-text').value;
-        if (!text.trim()) {
-            showEuroleagueModuleMessage('Pega los datos de la clasificación.', 'error');
-            return;
-        }
 
         clearEuroleagueModuleResult();
         standingsModuleSubmit.disabled = true;
         standingsModuleCopySubmit.disabled = true;
-        showEuroleagueModuleMessage('Convirtiendo la clasificación...', 'success');
+        showEuroleagueModuleMessage('Descargando clasificación de Euroliga...', 'success');
         try {
             await requestEuroleagueModuleXml('/convert_euroleague_standings', {text});
         } catch (error) {
@@ -879,10 +875,6 @@
 
     standingsModuleCopySubmit.addEventListener('click', () => {
         const text = document.getElementById('standings-text').value;
-        if (!text.trim()) {
-            showEuroleagueModuleMessage('Pega los datos de la clasificación.', 'error');
-            return;
-        }
 
         generateAndCopyModuleXml({
             generateXml: () => requestEuroleagueModuleXml(
@@ -892,7 +884,7 @@
             buttons: [standingsModuleSubmit, standingsModuleCopySubmit],
             clearResult: clearEuroleagueModuleResult,
             showStatus: showEuroleagueModuleMessage,
-            loadingMessage: 'Generando y copiando la clasificación...',
+            loadingMessage: 'Descargando y copiando la clasificación Euroliga...',
             copiedMessage: 'Clasificación de Euroliga generada y copiada.'
         });
     });
