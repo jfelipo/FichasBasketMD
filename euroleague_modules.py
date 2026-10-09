@@ -300,27 +300,17 @@ def _fetch_euroleague_standings():
 
     teams = []
     for item in _feed_items(root, "team"):
-        name = _child_text(item, "teamName") or _child_text(item, "name")
+        name = _child_text(item, "name")
         if not name:
             continue
         try:
-            rank = int(item.get("position", 0))
-        except (ValueError, TypeError):
+            rank = int(_child_text(item, "ranking", "0"))
+        except ValueError:
             rank = 0
 
-        # Buscamos los puntos probando múltiples variantes de nombres que usa la API de Euroliga
-        points_for = (
-            _child_text(item, "pointsFor") or 
-            _child_text(item, "points_for") or 
-            _child_text(item, "pf") or 
-            "0"
-        )
-        points_against = (
-            _child_text(item, "pointsAgainst") or 
-            _child_text(item, "points_against") or 
-            _child_text(item, "pa") or 
-            "0"
-        )
+        # Usamos los nombres exactos que nos pasaste: ptsfavour y ptsagainst
+        points_for = _child_text(item, "ptsfavour", "0")
+        points_against = _child_text(item, "ptsagainst", "0")
 
         teams.append({
             "rank": rank,
