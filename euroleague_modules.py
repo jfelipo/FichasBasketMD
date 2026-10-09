@@ -69,8 +69,10 @@ def _local_tag(tag):
 
 
 def _child_text(element, name, default=""):
-    for child in element:
-        if _local_tag(child.tag) == name.lower():
+    """Busca el texto de un tag de forma recursiva para encontrarlo aunque esté anidado."""
+    name = name.lower()
+    for child in element.iter():
+        if _local_tag(child.tag) == name:
             return (child.text or "").strip()
     return default
 
@@ -306,13 +308,27 @@ def _fetch_euroleague_standings():
         except (ValueError, TypeError):
             rank = 0
 
+        # Buscamos los puntos probando múltiples variantes de nombres que usa la API de Euroliga
+        points_for = (
+            _child_text(item, "pointsFor") or 
+            _child_text(item, "points_for") or 
+            _child_text(item, "pf") or 
+            "0"
+        )
+        points_against = (
+            _child_text(item, "pointsAgainst") or 
+            _child_text(item, "points_against") or 
+            _child_text(item, "pa") or 
+            "0"
+        )
+
         teams.append({
             "rank": rank,
             "name": _team_name(name),
             "wins": _child_text(item, "wins", "0"),
             "losses": _child_text(item, "losses", "0"),
-            "points_for": _child_text(item, "pointsFor", "0"),
-            "points_against": _child_text(item, "pointsAgainst", "0"),
+            "points_for": points_for,
+            "points_against": points_against,
         })
 
     if not teams:
